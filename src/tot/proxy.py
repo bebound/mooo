@@ -37,7 +37,7 @@ async def proxy(request):
     method = request.method
     url = request.match_info.get('url')
     if not url:
-        url = 'https://github.com'
+        url = 'https://github.com/bebound/tot'
     request_headers = dict(request.headers)
     # Reset the host header to the requested host
     if 'Host' in request_headers:
@@ -51,7 +51,7 @@ async def proxy(request):
     # Disable automatic decompression, so the content length will be correct
     # see https://github.com/aio-libs/aiohttp/issues/1992
 
-    # skip auto headers 'Accept-Encoding': 'gzip, deflate', to prevent an unexpected gzip content
+    # skip auto headers 'Accept-Encoding': 'gzip, deflate', to prevent an unexpected gzip content returned
     async with ClientSession(auto_decompress=False, skip_auto_headers=('Accept-Encoding',)) as session:
         async with session.request(method, url, data=request_data, headers=request_headers,
                                    params=request_params) as response:
@@ -79,11 +79,13 @@ def main():
     parser.add_argument('--host', type=str, default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--debug', type=bool, default=False)
+    parser.add_argument('--allow-domain',type=lambda x: x.split(','), default=[])
     parser.add_argument('--insane', type=bool, default=False)
     parser.add_argument('--enable-cookie', type=bool, default=False)
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
+    print(f'Listening on http://{args.host}:{args.port}')
     web.run_app(app, host=args.host, port=args.port)
 
 

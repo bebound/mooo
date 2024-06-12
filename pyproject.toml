@@ -8,18 +8,17 @@ dynamic = ["version"]
 description = "A simple http proxy"
 readme = "README.md"
 requires-python = ">=3.8"
-#license = {file = "LICENSE.txt"}
-#keywords = ["sample", "setuptools", "development"]
-#authors = [
-#    {name = "A. Random Developer", email = "author@example.com" }
-#]
+license = {file = "LICENSE"}
+keywords = ["HTTP", "proxy"]
+authors = [
+    {name = "Hang", email = "bebound@gmail.com" }
+]
 classifiers = [
     # How mature is this project? Common values are
     #   3 - Alpha
     #   4 - Beta
     #   5 - Production/Stable
     "Development Status :: 3 - Alpha",
-    # Pick your license as you wish
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -38,8 +37,8 @@ dependencies = [
 test = ["requests", "pytest"]
 
 [project.urls]
-#"Homepage" = "https://github.com/pypa/sampleproject"
-#"Source" = "https://github.com/pypa/sampleproject/"
+"Homepage" = "https://github.com/bebound/tot"
+"Source" = "https://github.com/bebound/tot/"
 
 [project.scripts]
 tot = "tot.proxy:main"
