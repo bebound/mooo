@@ -1,0 +1,37 @@
+TOT
+---------
+
+`tot` is a lightweight HTTP proxy written in Python. You can start it in the server that you can use it as a proxy
+server.
+
+## Quick Start
+
+### Installation
+
+`pip install tot`
+
+### Usage
+
+1. Start the proxy server
+
+```bash
+tot --host 0.0.0.0 --port 8080
+```
+
+2. Use the proxy server to access the internet
+
+```bash
+curl http://your_proxy_server:8080/{http_url}
+git clone http://your_proxy_server:8080/{github_url}
+```
+
+> [!WARNING]
+> The proxy server auto proxy the local network, it could be a security issue.
+> Please use it in docker or specify `--allow-domain` to limit the domain that the proxy server can access.
+
+## Parameters
+
+| Parameter | Description        | Default   |
+|-----------|--------------------|-----------|
+| `--host`  | The listening host | 127.0.0.1 |
+| `--port`  | The listening port | 8080      |
