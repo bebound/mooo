@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tot"
+name = "mooo"
 dynamic = ["version"]
 description = "A simple http proxy"
 readme = "README.md"
@@ -37,12 +37,12 @@ dependencies = [
 test = ["requests", "pytest"]
 
 [project.urls]
-"Homepage" = "https://github.com/bebound/tot"
-"Source" = "https://github.com/bebound/tot/"
+"Homepage" = "https://github.com/bebound/mooo"
+"Source" = "https://github.com/bebound/mooo/"
 
 [project.scripts]
-tot = "tot.proxy:main"
+mooo = "mooo.proxy:main"
 
 
 [tool.setuptools.dynamic]
-version = { attr = "tot.__version__" }
+version = { attr = "mooo.__version__" }

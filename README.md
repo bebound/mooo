@@ -1,21 +1,20 @@
-TOT
+mooo
 ---------
 
-`tot` is a lightweight HTTP proxy written in Python. You can start it in the server that you can use it as a proxy
-server.
+`mooo` is a lightweight HTTP proxy written in Python. You can run it in a server then use it to access the internet.
 
 ## Quick Start
 
 ### Installation
 
-`pip install tot`
+`pip install mooo`
 
 ### Usage
 
 1. Start the proxy server
 
 ```bash
-tot --host 0.0.0.0 --port 8080
+mooo --host 0.0.0.0 --port 8080
 ```
 
 2. Use the proxy server to access the internet
@@ -32,7 +31,7 @@ git clone http://your_proxy_server:8080/{github_url}
 ## Docker Guide
 
 ```bash
-docker run -p 8080:8080 bebound/tot --host 0.0.0.0 --port=8080
+docker run -p 8080:8080 bebound/mooo --host 0.0.0.0 --port=8080
 ```
 
 ## Parameters

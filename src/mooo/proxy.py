@@ -9,6 +9,7 @@ routes = web.RouteTableDef()
 
 
 def is_url(url):
+    # modified from https://github.com/django/django/blob/stable/1.3.x/django/core/validators.py#L45
     import re
     regex = re.compile(
         r'^https?://'  # http:// or https://
@@ -37,7 +38,7 @@ async def proxy(request):
     method = request.method
     url = request.match_info.get('url')
     if not url:
-        url = 'https://github.com/bebound/tot'
+        url = 'https://github.com/bebound/mooo'
     request_headers = dict(request.headers)
     # Reset the host header to the requested host
     if 'Host' in request_headers:
