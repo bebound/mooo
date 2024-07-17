@@ -23,11 +23,16 @@ def is_url(url):
 
 @middleware
 async def check_url(request, handler):
+    from fnmatch import fnmatch
     url = request.match_info.get('url')
     if url:
         if not is_url(url):
             logging.getLogger('aiohttp.access').info(f'Requested url {url} is not valid')
             return web.Response(text=f'Requested url {url} is not valid', status=400)
+        domain = URL(url).host
+        if args.allow_domain and not any(fnmatch(domain, pattern) for pattern in args.allow_domain):
+            logging.getLogger('aiohttp.access').info(f'Requested domain {domain} is not allowed')
+            return web.Response(text=f'Requested domain {domain} is not allowed', status=403)
     resp = await handler(request)
     return resp
 
@@ -49,7 +54,7 @@ async def proxy(request):
     request_params = dict(request.rel_url.query)
 
     request_data = await request.read()
-    # Disable automatic decompression, so the content length will be correct
+    # Use `auto_decompress=False` to disable automatic decompression, so the returned content-encoding is still gzip
     # see https://github.com/aio-libs/aiohttp/issues/1992
 
     # skip auto headers 'Accept-Encoding': 'gzip, deflate', to prevent an unexpected gzip content returned
@@ -76,13 +81,16 @@ app.add_routes(routes)
 
 def main():
     global args
-    parser = argparse.ArgumentParser(description='proxy')
-    parser.add_argument('--host', type=str, default='127.0.0.1')
-    parser.add_argument('--port', type=int, default=8080)
-    parser.add_argument('--debug', type=bool, default=False)
-    parser.add_argument('--allow-domain',type=lambda x: x.split(','), default=[])
-    parser.add_argument('--insane', type=bool, default=False)
-    parser.add_argument('--enable-cookie', type=bool, default=False)
+    parser = argparse.ArgumentParser(
+        description='mooo is a lightweight HTTP proxy written in Python. You can run it in a server then use it to access the internet.')
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='The host to listen on')
+    parser.add_argument('--port', type=int, default=8080, help='The port to listen on')
+    parser.add_argument('--debug', type=bool, default=False, action=argparse.BooleanOptionalAction,
+                        help='Enable debug logging')
+    parser.add_argument('--allow-domain', type=lambda x: x.split(','), default=[],
+                        help='Allow requests to these domains')
+    parser.add_argument('--enable-cookie', type=bool, default=False, action=argparse.BooleanOptionalAction,
+                        help='Enable cookie')
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)

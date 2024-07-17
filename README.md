@@ -28,7 +28,7 @@ git clone http://your_proxy_server:8080/{github_url}
 > The proxy server auto proxy the local network, it could be a security issue.
 > Please use it in docker or specify `--allow-domain` to limit the domain that the proxy server can access.
 
-## Docker Guide
+## Docker Usage Guide
 
 ```bash
 docker run -p 8080:8080 bebound/mooo --host 0.0.0.0 --port=8080
@@ -36,7 +36,10 @@ docker run -p 8080:8080 bebound/mooo --host 0.0.0.0 --port=8080
 
 ## Parameters
 
-| Parameter | Description        | Default   |
-|-----------|--------------------|-----------|
-| `--host`  | The listening host | 127.0.0.1 |
-| `--port`  | The listening port | 8080      |
+| Parameter         | Description                                                                                                  | Default   |
+|-------------------|--------------------------------------------------------------------------------------------------------------|-----------|
+| `--host`          | The listening host                                                                                           | 127.0.0.1 |
+| `--port`          | The listening port                                                                                           | 8080      |
+| `--debug`         | Show debug logging                                                                                           | False     |
+| `--allow-domain`  | Allow domain list separated by comma. Once it's set, the request domain must match the wildcard domain list. | Empty     |
+| `--enable-cookie` | Pass the cookie to the server                                                                                | False     |
