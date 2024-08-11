@@ -1,45 +1,47 @@
-mooo
+Mooo
 ---------
+
+[![PyPI version](https://badge.fury.io/py/mooo.svg)](https://badge.fury.io/py/mooo)
 
 `mooo` is a lightweight HTTP proxy written in Python. You can run it in a server then use it to access the internet.
 
 ## Quick Start
 
-### Installation
+### Option 1: Start Python server
 
-`pip install mooo`
+1. Install `mooo`
+   `pip install mooo`
 
-### Usage
-
-1. Start the proxy server
+2. Start the proxy server
 
 ```bash
 mooo --host 0.0.0.0 --port 8080
 ```
 
-2. Use the proxy server to access the internet
+> [!WARNING]
+> The proxy server automatically proxies the local network, it could pose a security risk.
+> It is recommended to use it in Docker or specify `--domain` to limit the domain that the proxy server can
+> access.
+
+### Option 2: Start Docker server
+
+```bash
+docker run -p 8080:8080 bebound/mooo --host 0.0.0.0 --port=8080
+```
+
+### Use Mooo
 
 ```bash
 curl http://your_proxy_server:8080/{http_url}
 git clone http://your_proxy_server:8080/{github_url}
 ```
 
-> [!WARNING]
-> The proxy server auto proxy the local network, it could be a security issue.
-> Please use it in docker or specify `--allow-domain` to limit the domain that the proxy server can access.
-
-## Docker Usage Guide
-
-```bash
-docker run -p 8080:8080 bebound/mooo --host 0.0.0.0 --port=8080
-```
-
 ## Parameters
 
-| Parameter         | Description                                                                                                  | Default   |
-|-------------------|--------------------------------------------------------------------------------------------------------------|-----------|
-| `--host`          | The listening host                                                                                           | 127.0.0.1 |
-| `--port`          | The listening port                                                                                           | 8080      |
-| `--debug`         | Show debug logging                                                                                           | False     |
-| `--allow-domain`  | Allow domain list separated by comma. Once it's set, the request domain must match the wildcard domain list. | Empty     |
-| `--enable-cookie` | Pass the cookie to the server                                                                                | False     |
+| Parameter         | Description                                                              | Default   |
+|-------------------|--------------------------------------------------------------------------|-----------|
+| `--host`          | The listening host                                                       | 127.0.0.1 |
+| `--port`          | The listening port                                                       | 8080      |
+| `--debug`         | Show debug logging                                                       | False     |
+| `--domain`        | Once it's set, the request domain must match the wildcard domain list.   | None      |
+| `--enable-cookie` | Pass the cookie to the server                                            | False     |

@@ -30,7 +30,7 @@ async def check_url(request, handler):
             logging.getLogger('aiohttp.access').info(f'Requested url {url} is not valid')
             return web.Response(text=f'Requested url {url} is not valid', status=400)
         domain = URL(url).host
-        if args.allow_domain and not any(fnmatch(domain, pattern) for pattern in args.allow_domain):
+        if args.domain and not any(fnmatch(domain, pattern) for pattern in args.domain):
             logging.getLogger('aiohttp.access').info(f'Requested domain {domain} is not allowed')
             return web.Response(text=f'Requested domain {domain} is not allowed', status=403)
     resp = await handler(request)
@@ -87,13 +87,15 @@ def main():
     parser.add_argument('--port', type=int, default=8080, help='The port to listen on')
     parser.add_argument('--debug', type=bool, default=False, action=argparse.BooleanOptionalAction,
                         help='Enable debug logging')
-    parser.add_argument('--allow-domain', type=lambda x: x.split(','), default=[],
-                        help='Allow requests to these domains')
+    parser.add_argument('--domain', action='append', nargs='*', help='Allow requests to these domains')
     parser.add_argument('--enable-cookie', type=bool, default=False, action=argparse.BooleanOptionalAction,
                         help='Enable cookie')
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
+    # domain list needs to be flattened.
+    if args.domain:
+        args.domain = [j for i in args.domain for j in i]
     print(f'Listening on http://{args.host}:{args.port}')
     web.run_app(app, host=args.host, port=args.port)
 
