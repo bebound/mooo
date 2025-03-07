@@ -294,7 +294,8 @@ def main():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     config.update_from_args(args)
-    print(f'Listening on http://{args.host}:{args.port}')
+    if config.enabled_profile:
+        print('Enabled profiles:', ', '.join(sorted(config.enabled_profile.keys())))
     web.run_app(app, host=args.host, port=args.port)
 
 
