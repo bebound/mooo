@@ -262,10 +262,14 @@ async def proxy(request):
             )
             _print('response headers:', response_headers)
             _print('response status', response.status)
-            await resp.prepare(request)
-            async for chunk in response.content.iter_chunked(32 * 1024):
-                await resp.write(chunk)
-            await resp.write_eof()
+            try:
+                await resp.prepare(request)
+                async for chunk in response.content.iter_chunked(32 * 1024):
+                    await resp.write(chunk)
+                await resp.write_eof()
+            except ConnectionResetError:
+                # ignore error when client closed the connection
+                pass
             return resp
 
 
