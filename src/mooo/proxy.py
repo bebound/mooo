@@ -37,39 +37,40 @@ class Config:
         self.port: int = 8080
         self.cookie: bool = False
         self._default_domain: str = ''
-        self._rewrite_headers: dict = {}
-        self.domain_map: dict = {}
-        self._rewrite_urls: list = []
-        self._rewrite_params: list = []
+        self._rewrite_headers: dict[str, list[RewriteHeader]] = {}
+        self.domain_map: dict[str, str] = {}
+        self._rewrite_urls: list[RewriteUrl] = []
+        self._rewrite_params: list[RewriteParam] = []
         self.smart_route: bool = False
         self.enabled_profile: dict = {}
+        self.debug: bool = False
 
-    def get_default_domain(self, server_host=None):
+    def get_default_domain(self, server_host: str):
         if not self.smart_route:
             return self._default_domain
         else:
-            for web_domain, config in self.GLOBAL_PROFILE.items():
+            for web_domain, web_config in self.GLOBAL_PROFILE.items():
                 if web_domain in server_host:
-                    return config['default_domain']
+                    return web_config['default_domain']
 
-    def add_domain(self, *domains):
+    def add_domain(self, *domains: str):
         self.domain.update(domains)
 
-    def add_rewrite_headers(self, new_rules):
+    def add_rewrite_headers(self, new_rules: dict[str, list[RewriteHeader]]):
         for header, rules in new_rules.items():
             ori_value = self._rewrite_headers.get(header, [])
             self._rewrite_headers[header] = ori_value + rules
 
-    def add_rewrite_urls(self, rules):
+    def add_rewrite_urls(self, rules: list[RewriteUrl]):
         self._rewrite_urls.extend(rules)
 
-    def add_rewrite_params(self, rules):
+    def add_rewrite_params(self, rules: list[RewriteParam]):
         self._rewrite_params.extend(rules)
 
-    def add_domain_map(self, domain_map):
+    def add_domain_map(self, domain_map: dict[str, str]):
         self.domain_map.update(domain_map)
 
-    def set_default_domain(self, domain):
+    def set_default_domain(self, domain: str):
         if self._default_domain:
             logging.getLogger('aiohttp.access').warning(
                 f'Setting default domain from {self._default_domain} to {domain}')
@@ -79,10 +80,10 @@ class Config:
     def more_variables(host):
         return {'host': host, 'port': config.port, 'domain': host.split(':')[0]}
 
-    def rules_by_host(self, server_host, property, default=None):
+    def rules_by_host(self, server_host, key, default=None):
         for domain, domain_config in self.enabled_profile.items():
             if domain in server_host:
-                return domain_config.get(property, default)
+                return domain_config.get(key, default)
 
     def rewrite_headers(self, original_headers: dict, server_host: str):
         if not self._rewrite_headers:
@@ -95,7 +96,7 @@ class Config:
             if h in rules:
                 for rule in rules[h]:
                     new_value = re.sub(rule.source, rule.target.format(**self.more_variables(server_host)),
-                                                 original_headers[h])
+                                       original_headers[h])
                     if new_value != original_headers[h]:
                         _print('rewrite header:', h, 'from', original_headers[h], 'to', new_value)
                         original_headers[h] = new_value
@@ -135,11 +136,11 @@ class Config:
     def update_from_args(self, args):
         self.cookie = args.cookie
         self.domain = set(args.domain)
-        self.port = int(args.port)
+        self.port = args.port
         self.debug = args.debug
         if args.default_domain and not is_url(args.default_domain):
             raise ValueError(f'Default path {args.default_domain} is not a valid URL')
-        self.default_domain = args.default_domain
+        self.set_default_domain(args.default_domain)
         self.smart_route = args.smart_route
 
         for p in args.profile:
