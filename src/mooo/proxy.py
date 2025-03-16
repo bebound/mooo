@@ -135,9 +135,9 @@ class Config:
                     original_param[rule.param] = new_value
         return original_param
 
-    def rewrite_domains(self, original_url: str, server_host: str) -> str:
+    def rewrite_domains(self, original_url: str, server_host: str) -> str|None:
         if not self._rewrite_domains:
-            return ''
+            return None
         rules = self._rewrite_domains
         if self.smart_route:
             rules = self.rules_by_host(server_host, 'rewrite_domains', [])
@@ -146,13 +146,13 @@ class Config:
             if fnmatch(original_url, rule.source):
                 return rule.target
 
-    def get_full_url(self, original_url: str, server_host: str) -> str:
+    def get_full_url(self, original_url: str, server_host: str) -> str|None:
         # concat original_url with default domain
         domain = self.rewrite_domains(original_url, server_host)
         if not domain:
             domain = self.get_default_domain(server_host)
             if not domain:
-                return ''
+                return None
         import urllib.parse
         return urllib.parse.urljoin(domain, original_url)
 
@@ -215,8 +215,8 @@ async def check_url(request, handler):
     return resp
 
 
-def _print(*args, **kwargs):
-    if config.debug:
+def _print(*args, level=2, **kwargs):
+    if config.debug >= level:
         print(*args, **kwargs)
 
 
@@ -256,7 +256,7 @@ async def proxy(request):
     request_data = await request.read()
     # Use `auto_decompress=False` to disable automatic decompression, so the returned content-encoding is still gzip
     # see https://github.com/aio-libs/aiohttp/issues/1992
-    _print('request headers:', request_headers)
+    _print('request headers:', request_headers, level=3)
 
     # skip auto headers `'Accept-Encoding': 'gzip, deflate'`, to prevent an unexpected gzip content returned
     async with ClientSession(auto_decompress=False, skip_auto_headers=('Accept-Encoding',)) as session:
@@ -271,8 +271,8 @@ async def proxy(request):
                 status=response.status,
                 headers=response_headers
             )
-            _print('response headers:', response_headers)
-            _print('response status', response.status)
+            _print('response headers:', response_headers, level=3)
+            _print('response status', response.status, level=3)
             try:
                 await resp.prepare(request)
                 async for chunk in response.content.iter_chunked(32 * 1024):
@@ -290,8 +290,7 @@ def parse_args():
                     'access the internet.')
     parser.add_argument('--host', type=str, default='127.0.0.1', help='The host to listen on')
     parser.add_argument('--port', type=int, default=8080, help='The port to listen on')
-    parser.add_argument('--debug', type=bool, default=False, action=argparse.BooleanOptionalAction,
-                        help='Enable debug logging')
+    parser.add_argument('--debug', action='count', default=0, help='Give more output')
     parser.add_argument('--domain', nargs='+', help='Allow requests to these domains', default=list())
     parser.add_argument('--default-domain', type=str, help='Default domain to redirect to')
     parser.add_argument('--cookie', type=bool, default=False, action=argparse.BooleanOptionalAction,
@@ -305,13 +304,13 @@ def parse_args():
 
 def main():
     args = parse_args()
-
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     config.update_from_args(args)
     if config.enabled_profile:
         print('Enabled profiles:', ', '.join(sorted(config.enabled_profile.keys())))
     web.run_app(app, host=args.host, port=args.port)
+
 
 
 routes = web.RouteTableDef()

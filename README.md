@@ -75,7 +75,7 @@ reverse_proxy  127.0.0.1:8080
 |--------------------|-----------------------------------------------------------------------|-----------|-----------------------------|
 | `--host`           | The listening host                                                    | 127.0.0.1 | 0.0.0.0                     |
 | `--port`           | The listening port                                                    | 8080      |                             |
-| `--debug`          | Show debug logging                                                    | False     |                             |
+| `--debug`          | Give more output. Option is additive, and can be used up to 3 times.  | 0         |                             |
 | `--domain`         | Once it's set, the request domain must match the wildcard domain list | None      | `*.github.com *.google.com` | 
 | `--cookie`         | Pass the cookie to the server                                         | False     |                             |
 | `--default-domain` | The default domain to proxy                                           | None      | `https://www.github.com`    |
