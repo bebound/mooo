@@ -8,11 +8,13 @@ from aiohttp.web import middleware
 RewriteHeader = namedtuple('RewriteRule', ['source', 'target'])
 RewriteUrl = namedtuple('RewriteRule', ['source', 'target'])
 RewriteParam = namedtuple('RewriteRule', ['url', 'param', 'old_value', 'new_value'])
+RewriteDomain = namedtuple('RewriteRule', ['source', 'target'])
 
 
 class Config:
     GLOBAL_PROFILE = {
-        'github': {'domain': ['*.github.com', '*.githubusercontent.com'], 'default_domain': 'https://www.github.com/'},
+        'github': {'domain': ['*.github.com', 'github.com', '*.githubusercontent.com'],
+                   'default_domain': 'https://github.com/'},
         'google': {'domain': ['*.google.com'], 'default_domain': 'https://www.google.com/'},
         'docker': {'domain': ['*.docker.io'], 'default_domain': 'https://registry-1.docker.io/',
                    'rewrite_headers': {
@@ -27,9 +29,9 @@ class Config:
                    'rewrite_params': [
                        RewriteParam('https://auth.docker.io/token', 'scope', r'^repository:([^:/]+):([^:]+)$',
                                     r'repository:library/\1:\2')],
-                   'domain_map': {
-                       # 'wat/': 'https://auth.docker.io',
-                   }},
+                   'rewrite_domains': [
+                       # RewriteDomain('wat/', 'https://auth.docker.io'),
+                   ]},
     }
 
     def __init__(self):
@@ -38,7 +40,7 @@ class Config:
         self.cookie: bool = False
         self._default_domain: str = ''
         self._rewrite_headers: dict[str, list[RewriteHeader]] = {}
-        self.domain_map: dict[str, str] = {}
+        self._rewrite_domains: list[RewriteDomain] = []
         self._rewrite_urls: list[RewriteUrl] = []
         self._rewrite_params: list[RewriteParam] = []
         self.smart_route: bool = False
@@ -67,8 +69,8 @@ class Config:
     def add_rewrite_params(self, rules: list[RewriteParam]):
         self._rewrite_params.extend(rules)
 
-    def add_domain_map(self, domain_map: dict[str, str]):
-        self.domain_map.update(domain_map)
+    def add_rewrite_domains(self, rewrite_domains: list[RewriteDomain]):
+        self._rewrite_domains.extend(rewrite_domains)
 
     def set_default_domain(self, domain: str):
         if self._default_domain:
@@ -101,7 +103,7 @@ class Config:
                         _print('rewrite header:', h, 'from', original_headers[h], 'to', new_value)
                         original_headers[h] = new_value
 
-    def rewrite_url(self, original_url: str, server_host: str):
+    def rewrite_url(self, original_url: str, server_host: str) -> str:
         if not self._rewrite_urls:
             return original_url
         import re
@@ -133,6 +135,27 @@ class Config:
                     original_param[rule.param] = new_value
         return original_param
 
+    def rewrite_domains(self, original_url: str, server_host: str) -> str:
+        if not self._rewrite_domains:
+            return ''
+        rules = self._rewrite_domains
+        if self.smart_route:
+            rules = self.rules_by_host(server_host, 'rewrite_domains', [])
+        for rule in rules:
+            from fnmatch import fnmatch
+            if fnmatch(original_url, rule.source):
+                return rule.target
+
+    def get_full_url(self, original_url: str, server_host: str) -> str:
+        # concat original_url with default domain
+        domain = self.rewrite_domains(original_url, server_host)
+        if not domain:
+            domain = self.get_default_domain(server_host)
+            if not domain:
+                return ''
+        import urllib.parse
+        return urllib.parse.urljoin(domain, original_url)
+
     def update_from_args(self, args):
         self.cookie = args.cookie
         self.domain = set(args.domain)
@@ -151,7 +174,7 @@ class Config:
             self.add_rewrite_headers(self.GLOBAL_PROFILE[p].get('rewrite_headers', {}))
             self.add_rewrite_urls(self.GLOBAL_PROFILE[p].get('rewrite_urls', []))
             self.add_rewrite_params(self.GLOBAL_PROFILE[p].get('rewrite_params', []))
-            self.add_domain_map(self.GLOBAL_PROFILE[p].get('domain_map', {}))
+            self.add_rewrite_domains(self.GLOBAL_PROFILE[p].get('rewrite_domains', []))
 
 
 def is_url(url):
@@ -179,7 +202,7 @@ async def check_url(request, handler):
     server_host = request.headers.get('Host')
     if url:
         if not is_url(url):
-            if not config.get_default_domain(server_host):
+            if not config.get_full_url(url, server_host):
                 logging.getLogger('aiohttp.access').info(f'Requested url {url} is not valid')
                 logging.getLogger('aiohttp.access').info(f'header {dict(request.headers)}')
                 return web.Response(text=f'Requested url {url} is not valid', status=400)
@@ -208,17 +231,7 @@ async def proxy(request):
         else:
             url = 'https://github.com/bebound/mooo/'
     if not is_url(url):
-        if config.domain_map:
-            for pattern, target in config.domain_map.items():
-                from fnmatch import fnmatch
-                if fnmatch(url, pattern):
-                    url = target
-                    break
-
-        if config.get_default_domain(server_host):
-            import urllib.parse
-            url = urllib.parse.urljoin(config.get_default_domain(server_host), url)
-
+        url = config.get_full_url(url, server_host)
     request_headers = dict(request.headers)
     # The proxy server's request url is conflicted with the host header, remove it.
     request_headers.pop('Host', None)
@@ -226,10 +239,7 @@ async def proxy(request):
     for i in request_headers.copy():
         if i.startswith('X-'):
             request_headers.pop(i)
-    new_url = config.rewrite_url(url, server_host)
-    if new_url != url:
-        _print(f'Rewrite url from {url} to {new_url}')
-        url = new_url
+    url = config.rewrite_url(url, server_host)
     _print(f'Proxying {method} {url} from {server_host}/{ori_url}')
 
     if not config.cookie and 'Cookie' in request_headers:
