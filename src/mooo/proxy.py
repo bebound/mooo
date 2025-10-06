@@ -306,6 +306,9 @@ def main():
     args = parse_args()
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
+    if args.host == '0.0.0.0':
+        # listen on all interfaces include IPv6
+        args.host = None
     config.update_from_args(args)
     if config.enabled_profile:
         print('Enabled profiles:', ', '.join(sorted(config.enabled_profile.keys())))
